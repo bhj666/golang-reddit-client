@@ -74,7 +74,7 @@ func HandleGetMemes(h MemeSearchHandler, query, from string, page, pageSize int6
 		}
 		resp := parseResponse(response)
 		if resp == nil || len(resp.Data.Posts) == 0 {
-			return "", 500, err
+			return "", http.StatusInternalServerError, err
 		}
 		for _, p := range resp.Data.Posts {
 			posts = append(posts, p.Data)

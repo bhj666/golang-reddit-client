@@ -48,7 +48,7 @@ func (c *RedditClientMock) RefreshToken(string) (*http.Response, error) {
 func (c *RedditClientMock) FindMemes(query string, from string, after string, token string) (*http.Response, error) {
 	response, ok := c.FindResults[after]
 	if !ok {
-		return buildResponse(404, "{}"), nil
+		return buildResponse(http.StatusNotFound, "{}"), nil
 	}
 	return buildResponse(response.FindStatus, response.FindBody), response.FindError
 }

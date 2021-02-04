@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
 )
 
 type RefreshHandler interface {
@@ -37,7 +38,7 @@ func (h RefreshHandlerImpl) RefreshToken() func() {
 			return
 		}
 		resp, er := h.RedditClient.RefreshToken(token.RefreshToken)
-		if er != nil || resp.StatusCode != 200 {
+		if er != nil || resp.StatusCode != http.StatusOK {
 			log.Print("No active tokens to refresh")
 			return
 		}

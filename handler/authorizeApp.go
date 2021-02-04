@@ -30,7 +30,7 @@ func (h AuthorizationHandler) ServeHTTP(responseWriter http.ResponseWriter,
 	token := persistance.Token{}
 	tokensDb.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
 	if token.AccessToken != "" {
-		responseWriter.WriteHeader(409)
+		responseWriter.WriteHeader(http.StatusConflict)
 		responseWriter.Write([]byte("Active token already exists"))
 		return
 	}
