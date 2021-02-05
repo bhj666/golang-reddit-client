@@ -2,30 +2,21 @@ package memes
 
 import (
 	errors "aws-example/error"
+	"aws-example/kitserver"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-kit/kit/log/logrus"
-	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 )
 
 func Handler() *kithttp.Server {
-	logger := log.New()
-	logger.SetFormatter(&log.JSONFormatter{})
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logrus.NewLogrusLogger(logger))),
-		kithttp.ServerErrorEncoder(errors.ErrorEncoder),
-	}
-
 	handler := kithttp.NewServer(
-		MakeEndpoint(),
+		makeEndpoint(),
 		decodeRequest,
 		encodeResponse,
-		opts...,
+		kitserver.GetOptions()...,
 	)
 	return handler
 }

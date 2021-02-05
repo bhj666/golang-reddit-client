@@ -12,7 +12,7 @@ import (
 
 func TestCustomPaginationFlow(test *testing.T) {
 	handler := getMemeHandlerWithValidTokenAndData()
-	resp, err := handler.GetMemes(request{
+	resp, err := handler.getMemes(request{
 		Query:    "php",
 		From:     "all",
 		Page:     1,
@@ -32,7 +32,7 @@ func TestCustomPaginationFlow(test *testing.T) {
 func TestNoActiveTokenFlow(test *testing.T) {
 	handler := getMemeHandlerWithOutdatedToken()
 
-	_, err := handler.GetMemes(request{
+	_, err := handler.getMemes(request{
 		Query:    "php",
 		From:     "all",
 		Page:     1,
@@ -50,15 +50,15 @@ func TestNoActiveTokenFlow(test *testing.T) {
 	}
 }
 
-func memeHandler() *MemeSearchHandler {
-	return &MemeSearchHandler{
+func memeHandler() *memeSearchHandler {
+	return &memeSearchHandler{
 		TokenRepository: testutils.GetTokenRepositoryMock(),
 		RedditClient:    &testutils.RedditClientMock{FindResults: make(map[string]testutils.FindResult)},
 		TimeProvider:    testutils.TimeProviderMock{Time: 121},
 	}
 }
 
-func getMemeHandlerWithValidTokenAndData() *MemeSearchHandler {
+func getMemeHandlerWithValidTokenAndData() *memeSearchHandler {
 	handler := memeHandler()
 	handler.TokenRepository.Save(persistance.Token{
 		TokenType:    "Bearer",
@@ -134,7 +134,7 @@ func getMemeHandlerWithValidTokenAndData() *MemeSearchHandler {
 	return handler
 }
 
-func getMemeHandlerWithOutdatedToken() *MemeSearchHandler {
+func getMemeHandlerWithOutdatedToken() *memeSearchHandler {
 	handler := memeHandler()
 	handler.TokenRepository.Save(persistance.Token{
 		TokenType:    "Bearer",

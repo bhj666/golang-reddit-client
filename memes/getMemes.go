@@ -14,14 +14,14 @@ import (
 	"sort"
 )
 
-type MemeSearchHandler struct {
+type memeSearchHandler struct {
 	TokenRepository persistance.TokenRepository
 	RedditClient    reddit.Client
 	TimeProvider    timeprovider.Provider
 }
 
-func NewMemeSearchHandler() MemeSearchHandler {
-	return MemeSearchHandler{
+func newMemeSearchHandler() memeSearchHandler {
+	return memeSearchHandler{
 		persistance.NewTokenRepository(),
 		reddit.NewClient(),
 		timeprovider.ProviderImpl{},
@@ -39,7 +39,7 @@ type response struct {
 	Data []reddit.PostResponseData
 }
 
-func (h MemeSearchHandler) GetMemes(request request) (*response, error) {
+func (h memeSearchHandler) getMemes(request request) (*response, error) {
 	db := h.TokenRepository
 	token := persistance.Token{}
 	db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
@@ -107,8 +107,8 @@ func parseResponse(response *http.Response) (*reddit.SearchResponse, error) {
 	return &result, nil
 }
 
-func MakeEndpoint() endpoint.Endpoint {
+func makeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, r interface{}) (interface{}, error) {
-		return NewMemeSearchHandler().GetMemes(r.(request))
+		return newMemeSearchHandler().getMemes(r.(request))
 	}
 }
