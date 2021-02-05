@@ -1,69 +1,52 @@
-package main
+package memes
 
 import (
+	errors "aws-example/error"
 	"aws-example/persistance"
 	"aws-example/reddit"
 	testutils "aws-example/test"
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"testing"
 )
 
-var memeRequestMock = &http.Request{
-	URL: &url.URL{
-		Path: "",
-	},
-}
-
-func TestDefaultPaginationFlow(test *testing.T) {
-	handler := getMemeHandlerWithValidTokenAndData()
-	var responseMock = testutils.ResponseWriterMock{}
-	memeRequestMock.URL.RawQuery = ""
-
-	handler.ServeHTTP(&responseMock, memeRequestMock)
-
-	response := make([]reddit.PostResponseData, 0)
-	if responseMock.Code != http.StatusOK {
-		test.Errorf("Should return correct result got %v instead", responseMock.Code)
-	}
-	_ = json.Unmarshal([]byte(responseMock.Data), &response)
-	if len(response) != 6 {
-		test.Errorf("Should return only one result got %s instead", responseMock.Data)
-	}
-	if response[0].Score != 100 {
-		test.Error("Should properly sort response by score")
-	}
-}
-
 func TestCustomPaginationFlow(test *testing.T) {
 	handler := getMemeHandlerWithValidTokenAndData()
-	var responseMock = testutils.ResponseWriterMock{}
-	memeRequestMock.URL.RawQuery = "page=1&pageSize=1"
-
-	handler.ServeHTTP(&responseMock, memeRequestMock)
-
-	response := make([]reddit.PostResponseData, 0)
-	if responseMock.Code != http.StatusOK {
-		test.Errorf("Should return correct result got %v instead", responseMock.Code)
+	resp, err := handler.GetMemes(request{
+		Query:    "php",
+		From:     "all",
+		Page:     1,
+		PageSize: 1,
+	})
+	if err != nil {
+		test.Errorf("Error should not be returned, got %s", err.Error())
 	}
-	_ = json.Unmarshal([]byte(responseMock.Data), &response)
-	if len(response) != 1 {
-		test.Errorf("Should return only one result got %s instead", responseMock.Data)
+	if len(resp.Data) != 1 {
+		test.Errorf("Should return only one result got %v instead", len(resp.Data))
 	}
-	if response[0].Score != 15 {
+	if resp.Data[0].Score != 15 {
 		test.Error("Should properly sort response by score")
 	}
 }
 
 func TestNoActiveTokenFlow(test *testing.T) {
 	handler := getMemeHandlerWithOutdatedToken()
-	var responseMock = testutils.ResponseWriterMock{}
 
-	handler.ServeHTTP(&responseMock, requestMock)
-
-	if responseMock.Code != http.StatusUnauthorized {
-		test.Errorf("Should return unauthorized error got %v instead", responseMock.Code)
+	_, err := handler.GetMemes(request{
+		Query:    "php",
+		From:     "all",
+		Page:     1,
+		PageSize: 1,
+	})
+	if err == nil {
+		test.Errorf("Error should be returned")
+	}
+	responseError, ok := err.(errors.ResponseError)
+	if !ok {
+		test.Errorf("Error should be of type ResponseError")
+	}
+	if responseError.Code() != http.StatusUnauthorized {
+		test.Errorf("Code should be 401 got  %v instead", responseError.Code())
 	}
 }
 

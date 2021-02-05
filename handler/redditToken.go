@@ -1,6 +1,7 @@
 package main
 
 import (
+	errors "aws-example/error"
 	"aws-example/persistance"
 	"aws-example/reddit"
 	"encoding/json"
@@ -49,11 +50,11 @@ func (h TokenExchangeHandler) ServeHTTP(responseWriter http.ResponseWriter,
 	log.Printf("Secret: %v", secret)
 	db.Delete(*secret)
 	resp, er := h.RedditClient.ExchangeForToken(code)
-	if handleError(responseWriter, http.StatusInternalServerError, er) {
+	if errors.Handle(responseWriter, http.StatusInternalServerError, er) {
 		return
 	}
 	response, er := ioutil.ReadAll(resp.Body)
-	if handleError(responseWriter, http.StatusInternalServerError, er) {
+	if errors.Handle(responseWriter, http.StatusInternalServerError, er) {
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -64,7 +65,7 @@ func (h TokenExchangeHandler) ServeHTTP(responseWriter http.ResponseWriter,
 	}
 	var token persistance.Token
 	er = json.Unmarshal(response, &token)
-	if handleError(responseWriter, http.StatusInternalServerError, er) {
+	if errors.Handle(responseWriter, http.StatusInternalServerError, er) {
 		return
 	}
 	now := time.Now()
