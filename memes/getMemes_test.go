@@ -6,27 +6,25 @@ import (
 	"aws-example/reddit"
 	testutils "aws-example/test"
 	"encoding/json"
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 )
 
 func TestCustomPaginationFlow(test *testing.T) {
 	handler := getMemeHandlerWithValidTokenAndData()
+
 	resp, err := handler.getMemes(request{
 		Query:    "php",
 		From:     "all",
 		Page:     1,
 		PageSize: 1,
 	})
-	if err != nil {
-		test.Errorf("Error should not be returned, got %s", err.Error())
-	}
-	if len(resp.Data) != 1 {
-		test.Errorf("Should return only one result got %v instead", len(resp.Data))
-	}
-	if resp.Data[0].Score != 15 {
-		test.Error("Should properly sort response by score")
-	}
+
+	require.Nil(test, err, fmt.Sprintf("Error should not be returned"))
+	require.Equal(test, 1, len(resp.Data))
+	require.Equal(test, int64(15), resp.Data[0].Score, "Should properly sort response by score")
 }
 
 func TestNoActiveTokenFlow(test *testing.T) {
@@ -38,16 +36,11 @@ func TestNoActiveTokenFlow(test *testing.T) {
 		Page:     1,
 		PageSize: 1,
 	})
-	if err == nil {
-		test.Errorf("Error should be returned")
-	}
+	require.NotNil(test, err, fmt.Sprintf("Error should be returned"))
+
 	responseError, ok := err.(errors.ResponseError)
-	if !ok {
-		test.Errorf("Error should be of type ResponseError")
-	}
-	if responseError.Code() != http.StatusUnauthorized {
-		test.Errorf("Code should be 401 got  %v instead", responseError.Code())
-	}
+	require.True(test, ok, "Error should be of type ResponseError")
+	require.Equal(test, http.StatusUnauthorized, responseError.Code())
 }
 
 func memeHandler() *memeSearchHandler {
@@ -65,7 +58,7 @@ func getMemeHandlerWithValidTokenAndData() *memeSearchHandler {
 		AccessToken:  "AccessToken",
 		ExpiresIn:    3600,
 		ExpiresAt:    122,
-		RefreshToken: "RefreshToken",
+		RefreshToken: "refreshToken",
 	})
 	body1 := reddit.SearchResponse{
 		Data: reddit.SearchResponseData{
@@ -141,7 +134,7 @@ func getMemeHandlerWithOutdatedToken() *memeSearchHandler {
 		AccessToken:  "AccessToken",
 		ExpiresIn:    3600,
 		ExpiresAt:    120,
-		RefreshToken: "RefreshToken",
+		RefreshToken: "refreshToken",
 	})
 	return handler
 }

@@ -13,6 +13,6 @@ func GetOptions() []kithttp.ServerOption {
 	logger.SetFormatter(&log.JSONFormatter{})
 	return []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logrus.NewLogrusLogger(logger))),
-		kithttp.ServerErrorEncoder(errors.ErrorEncoder),
+		kithttp.ServerErrorEncoder(errors.Encoder),
 	}
 }

@@ -10,25 +10,25 @@ import (
 	"net/http"
 )
 
-type RefreshHandler interface {
-	RefreshToken() func()
+type refreshHandler interface {
+	refreshToken() func()
 }
 
-type RefreshHandlerImpl struct {
+type refreshHandlerImpl struct {
 	TokenRepository persistance.TokenRepository
 	RedditClient    reddit.Client
 	TimeProvider    timeprovider.Provider
 }
 
-func NewRefreshHandler() RefreshHandler {
-	return RefreshHandlerImpl{
+func newRefreshHandler() refreshHandler {
+	return refreshHandlerImpl{
 		persistance.NewTokenRepository(),
 		reddit.NewClient(),
 		timeprovider.ProviderImpl{},
 	}
 }
 
-func (h RefreshHandlerImpl) RefreshToken() func() {
+func (h refreshHandlerImpl) refreshToken() func() {
 	return func() {
 		log.Printf("Scheduled function called")
 		db := h.TokenRepository

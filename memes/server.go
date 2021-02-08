@@ -11,14 +11,14 @@ import (
 	"strconv"
 )
 
-func Handler() *kithttp.Server {
-	handler := kithttp.NewServer(
+func Server() *kithttp.Server {
+	server := kithttp.NewServer(
 		makeEndpoint(),
 		decodeRequest,
 		encodeResponse,
 		kitserver.GetOptions()...,
 	)
-	return handler
+	return server
 }
 
 func decodeRequest(_ context.Context, r *http.Request) (interface{}, error) {

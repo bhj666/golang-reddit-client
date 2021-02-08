@@ -1,45 +1,35 @@
-package main
+package authorize
 
 import (
+	errors "aws-example/error"
 	"aws-example/persistance"
 	testutils "aws-example/test"
 	"aws-example/timeprovider"
+	"github.com/stretchr/testify/require"
 	"net/http"
-	"net/url"
 	"testing"
 )
 
-var authHandler = AuthorizationHandler{
+var authHandler = authorizationHandler{
 	SecretsRepository: testutils.GetSecretRepositoryMock(),
 	TokenRepository:   testutils.GetTokenRepositoryMock(),
 	RedditClient:      &testutils.RedditClientMock{},
 	TimeProvider:      timeprovider.ProviderImpl{},
 }
 
-var requestMock = &http.Request{
-	URL: &url.URL{
-		Path: "",
-	},
-}
-
 func TestAuthorizeNoValidTokenFlow(test *testing.T) {
-	var responseMock = testutils.ResponseWriterMock{}
-	authHandler.ServeHTTP(&responseMock, requestMock)
+	resp, err := authHandler.authorize()
 
-	if responseMock.Code != http.StatusSeeOther {
-		test.Error("User was not redirected on authorization flow")
-	}
+	require.Nil(test, err, "User was not redirected on authorization flow")
+	require.NotEqual(test, "", resp.RedirectUrl, "Authorization url not returned")
 }
 
 func TestAuthorizeValidTokenFlow(test *testing.T) {
-	var responseMock = testutils.ResponseWriterMock{}
 	authHandler.TokenRepository.Save(persistance.Token{
 		AccessToken: "access_token",
 		ExpiresAt:   authHandler.TimeProvider.GetCurrentSeconds() + 1000,
 	})
-	authHandler.ServeHTTP(&responseMock, requestMock)
-
-	if responseMock.Code != http.StatusConflict {
-		test.Error("Should not attempt authorization if there is already valid token")
-	}
+	_, err := authHandler.authorize()
+	require.NotNil(test, err, "Once there is already valid token endpoint should return error")
+	require.Equal(test, http.StatusConflict, err.(errors.GenericResponseError).ResponseCode, "Should not attempt authorization if there is already valid token")
 }

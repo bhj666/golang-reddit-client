@@ -1,7 +1,9 @@
 package main
 
 import (
+	"aws-example/authorize"
 	"aws-example/memes"
+	"aws-example/token"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
@@ -17,9 +19,9 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	log.Printf("Method: %s", request.HTTPMethod)
 	log.Print(request.Body)
 	router := mux.NewRouter()
-	router.Handle("/api/memes", memes.Handler()).Methods(http.MethodGet)
-	router.Handle("/api/token", NewTokenExchangeHandler()).Methods(http.MethodGet)
-	router.Handle("/api/authorize", NewAuthorizationHandler()).Methods(http.MethodGet)
+	router.Handle("/api/memes", memes.Server()).Methods(http.MethodGet)
+	router.Handle("/api/token", token.Server()).Methods(http.MethodGet)
+	router.Handle("/api/authorize", authorize.Server()).Methods(http.MethodGet)
 	adapter := gorillamux.New(router)
 	r, err := adapter.Proxy(request)
 	return r, err

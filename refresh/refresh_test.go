@@ -4,6 +4,7 @@ import (
 	"aws-example/persistance"
 	testutils "aws-example/test"
 	"encoding/json"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ var refreshedToken = persistance.Token{
 
 var currentToken = persistance.Token{
 	AccessToken:  "CurrentToken",
-	RefreshToken: "RefreshToken",
+	RefreshToken: "refreshToken",
 	ExpiresIn:    3600,
 	ExpiresAt:    2,
 	TokenType:    "Bearer",
@@ -23,17 +24,17 @@ var currentToken = persistance.Token{
 
 var invalidToken = persistance.Token{
 	AccessToken:  "CurrentToken",
-	RefreshToken: "RefreshToken",
+	RefreshToken: "refreshToken",
 	ExpiresIn:    3600,
 	ExpiresAt:    0,
 	TokenType:    "Bearer",
 }
 
-func getHandler(currentToken, refreshedToken persistance.Token) RefreshHandlerImpl {
+func getHandler(currentToken, refreshedToken persistance.Token) refreshHandlerImpl {
 	tokenMock := testutils.GetTokenRepositoryMock()
 	refreshResponse, _ := json.Marshal(refreshedToken)
 	tokenMock.Save(currentToken)
-	return RefreshHandlerImpl{
+	return refreshHandlerImpl{
 		TokenRepository: tokenMock,
 		RedditClient:    &testutils.RedditClientMock{RefreshError: nil, RefreshStatus: 200, RefreshBody: string(refreshResponse)},
 		TimeProvider:    testutils.TimeProviderMock{Time: 1},
@@ -43,27 +44,20 @@ func getHandler(currentToken, refreshedToken persistance.Token) RefreshHandlerIm
 func TestHappyPathFlow(test *testing.T) {
 	handler := getHandler(currentToken, refreshedToken)
 
-	handler.RefreshToken()()
+	handler.refreshToken()()
 
 	newToken := &persistance.Token{}
 	handler.TokenRepository.FindActive(newToken, 3600)
-	if newToken.AccessToken != "RefreshedAccessToken" {
-		test.Error("Token was not refreshed")
-	}
-	if newToken.RefreshToken != "RefreshToken" {
-		test.Error("Refresh token was not propagated")
-	}
-
+	require.Equal(test, "RefreshedAccessToken", newToken.AccessToken)
+	require.Equal(test, "refreshToken", newToken.RefreshToken)
 }
 
 func TestNoTokenToRefreshFlow(test *testing.T) {
 	handler := getHandler(invalidToken, refreshedToken)
 
-	handler.RefreshToken()()
+	handler.refreshToken()()
 
 	newToken := &persistance.Token{}
 	handler.TokenRepository.FindActive(newToken, 3600)
-	if newToken.AccessToken != "" {
-		test.Error("Token should not be refreshed")
-	}
+	require.Equal(test, "", newToken.AccessToken)
 }

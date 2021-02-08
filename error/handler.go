@@ -43,7 +43,20 @@ func (InternalError) Code() int {
 	return http.StatusInternalServerError
 }
 
-func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
+type GenericResponseError struct {
+	Message      string
+	ResponseCode int
+}
+
+func (e GenericResponseError) Error() string {
+	return e.Message
+}
+
+func (e GenericResponseError) Code() int {
+	return e.ResponseCode
+}
+
+func Encoder(ctx context.Context, err error, w http.ResponseWriter) {
 	if responseError, ok := err.(ResponseError); ok {
 		w.WriteHeader(responseError.Code())
 		w.Write([]byte(responseError.Error()))

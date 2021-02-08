@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	handler := NewRefreshHandler()
-	lambda.Start(handler.RefreshToken())
+	handler := newRefreshHandler()
+	lambda.Start(handler.refreshToken())
 }
