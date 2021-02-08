@@ -34,8 +34,8 @@ func (h authorizationHandler) authorize() (*response, error) {
 	tokensDb.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
 	if token.AccessToken != "" {
 		return nil, errors.GenericResponseError{
-			"Active token already exists",
-			409,
+			Message:      "Active token already exists",
+			ResponseCode: 409,
 		}
 	}
 	db := h.SecretsRepository

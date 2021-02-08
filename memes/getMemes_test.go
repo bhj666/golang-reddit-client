@@ -36,8 +36,8 @@ func TestNoActiveTokenFlow(test *testing.T) {
 		Page:     1,
 		PageSize: 1,
 	})
-	require.NotNil(test, err, fmt.Sprintf("Error should be returned"))
 
+	require.NotNil(test, err, fmt.Sprintf("Error should be returned"))
 	responseError, ok := err.(errors.ResponseError)
 	require.True(test, ok, "Error should be of type ResponseError")
 	require.Equal(test, http.StatusUnauthorized, responseError.Code())

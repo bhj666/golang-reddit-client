@@ -2,18 +2,8 @@ package errors
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
-
-func Handle(w http.ResponseWriter, statusCode int, err error) bool {
-	if err != nil {
-		w.WriteHeader(statusCode)
-		_, _ = w.Write([]byte(err.Error()))
-		log.Error(err)
-	}
-	return err != nil
-}
 
 type ResponseError interface {
 	Code() int
@@ -57,11 +47,13 @@ func (e GenericResponseError) Code() int {
 }
 
 func Encoder(ctx context.Context, err error, w http.ResponseWriter) {
+	//logger := ctx.Value("Logger").(log.Logger)
+	//logger.Log(err)
 	if responseError, ok := err.(ResponseError); ok {
 		w.WriteHeader(responseError.Code())
 		w.Write([]byte(responseError.Error()))
 	} else {
-		w.WriteHeader(responseError.Code())
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
 

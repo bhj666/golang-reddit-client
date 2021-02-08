@@ -11,8 +11,12 @@ import (
 func GetOptions() []kithttp.ServerOption {
 	logger := log.New()
 	logger.SetFormatter(&log.JSONFormatter{})
+	logInterface := logrus.NewLogrusLogger(logger)
+	enrichedLogger := TraceLogger{logger: logInterface}
 	return []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logrus.NewLogrusLogger(logger))),
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(enrichedLogger)),
+		kithttp.ServerBefore(ExtractTraceInfo(LogRequest(enrichedLogger))),
+		kithttp.ServerAfter(InsertTraceInfo(LogResponse())),
 		kithttp.ServerErrorEncoder(errors.Encoder),
 	}
 }

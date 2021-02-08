@@ -11,7 +11,7 @@ import (
 func Server() *kithttp.Server {
 	server := kithttp.NewServer(
 		makeEndpoint(),
-		nil,
+		kithttp.NopRequestDecoder,
 		encodeResponse,
 		kitserver.GetOptions()...,
 	)

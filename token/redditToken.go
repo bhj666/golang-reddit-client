@@ -6,7 +6,6 @@ import (
 	"aws-example/reddit"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -48,7 +47,6 @@ func (h tokenExchangeHandler) exchangeToken(r request) (*response, error) {
 			ResponseCode: http.StatusNotFound,
 		}
 	}
-	log.Printf("Secret: %v", secret)
 	db.Delete(*secret)
 	resp, er := h.RedditClient.ExchangeForToken(r.Code)
 	if er != nil {
