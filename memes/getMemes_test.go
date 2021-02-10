@@ -1,6 +1,7 @@
 package memes
 
 import (
+	"aws-example/encryption"
 	errors "aws-example/error"
 	"aws-example/persistance"
 	"aws-example/reddit"
@@ -55,10 +56,10 @@ func getMemeHandlerWithValidTokenAndData() *memeSearchHandler {
 	handler := memeHandler()
 	handler.TokenRepository.Save(persistance.Token{
 		TokenType:    "Bearer",
-		AccessToken:  "AccessToken",
+		AccessToken:  encryption.EncryptedString{"AccessToken"},
 		ExpiresIn:    3600,
 		ExpiresAt:    122,
-		RefreshToken: "refreshToken",
+		RefreshToken: encryption.EncryptedString{"refreshToken"},
 	})
 	body1 := reddit.SearchResponse{
 		Data: reddit.SearchResponseData{
@@ -131,10 +132,10 @@ func getMemeHandlerWithOutdatedToken() *memeSearchHandler {
 	handler := memeHandler()
 	handler.TokenRepository.Save(persistance.Token{
 		TokenType:    "Bearer",
-		AccessToken:  "AccessToken",
+		AccessToken:  encryption.EncryptedString{"AccessToken"},
 		ExpiresIn:    3600,
 		ExpiresAt:    120,
-		RefreshToken: "refreshToken",
+		RefreshToken: encryption.EncryptedString{"refreshToken"},
 	})
 	return handler
 }

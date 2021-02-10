@@ -22,4 +22,5 @@ const (
 	REDDIT_APP_ID     = ""
 	REDDIT_APP_SECRET = ""
 	REDDIT_USER_AGENT = ""
+	ENCRYPTION_SALT   = ""
 )

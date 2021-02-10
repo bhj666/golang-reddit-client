@@ -14,7 +14,7 @@ import (
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	router := mux.NewRouter()
 	router.Handle("/api/memes", memes.Server()).Methods(http.MethodGet)
-	router.Handle("/api/token", token.Server()).Methods(http.MethodGet)
+	router.Handle("/api/token/", token.Server()).Methods(http.MethodGet)
 	router.Handle("/api/authorize", authorize.Server()).Methods(http.MethodGet)
 	adapter := gorillamux.New(router)
 	r, err := adapter.Proxy(request)

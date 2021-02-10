@@ -3,6 +3,7 @@ package reddit
 import (
 	"aws-example/config"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,7 +24,10 @@ func NewClient() Client {
 }
 
 func (ClientImpl) GetRedirectUrl(secret string) string {
-	return fmt.Sprintf(config.REDDIT_AUTHORIZE_URL_TEMPLATE, config.REDDIT_APP_ID, secret, config.REDDIT_REDIRECT_URL, config.REDDIT_SCOPE)
+	result := fmt.Sprintf(config.REDDIT_AUTHORIZE_URL_TEMPLATE, config.REDDIT_APP_ID, secret, config.REDDIT_REDIRECT_URL, config.REDDIT_SCOPE)
+	log.Printf("Responding with url %s", result)
+	return result
+
 }
 
 func (c ClientImpl) ExchangeForToken(code string) (*http.Response, error) {

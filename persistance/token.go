@@ -1,6 +1,7 @@
 package persistance
 
 import (
+	"aws-example/encryption"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -12,12 +13,12 @@ type TokenRepository interface {
 }
 
 type Token struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int64  `json:"expires_in"`
-	Scope        string `json:"scope"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresAt    int64  `json:"expires_at"`
+	AccessToken  encryption.EncryptedString `json:"access_token"`
+	TokenType    string                     `json:"token_type"`
+	ExpiresIn    int64                      `json:"expires_in"`
+	Scope        string                     `json:"scope"`
+	RefreshToken encryption.EncryptedString `json:"refresh_token"`
+	ExpiresAt    int64                      `json:"expires_at"`
 }
 
 func (Token) TableName() string {

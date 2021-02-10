@@ -8,21 +8,34 @@ import (
 	"net/http"
 )
 
+const RequestKey = "request"
+
 func Server() *kithttp.Server {
 	server := kithttp.NewServer(
 		makeEndpoint(),
 		kithttp.NopRequestDecoder,
 		encodeResponse,
-		kitserver.GetOptions()...,
+		GetOptionsEnriched()...,
 	)
 	return server
+}
+
+func GetOptionsEnriched() []kithttp.ServerOption {
+	options := kitserver.GetOptions()
+	options = append(options, kithttp.ServerBefore(putRequestInCtx))
+	return options
+}
+
+func putRequestInCtx(ctx context.Context, r *http.Request) context.Context {
+	return context.WithValue(ctx, RequestKey, r)
 }
 
 func encodeResponse(
 	ctx context.Context, w http.ResponseWriter, r interface{},
 ) error {
-	resp, _ := r.(response)
-	http.Redirect(w, &http.Request{Method: "GET"}, resp.RedirectUrl, http.StatusSeeOther)
+	resp, _ := r.(*response)
+	request := ctx.Value(RequestKey).(*http.Request)
+	http.Redirect(w, request, resp.RedirectUrl, http.StatusSeeOther)
 	return nil
 }
 

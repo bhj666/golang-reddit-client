@@ -34,10 +34,10 @@ func (h refreshHandlerImpl) refreshToken() func() {
 		db := h.TokenRepository
 		token := persistance.Token{}
 		db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-		if token.AccessToken == "" {
+		if token.AccessToken.StringValue == "" {
 			return
 		}
-		resp, er := h.RedditClient.RefreshToken(token.RefreshToken)
+		resp, er := h.RedditClient.RefreshToken(token.RefreshToken.StringValue)
 		if er != nil || resp.StatusCode != http.StatusOK {
 			log.Print("No active tokens to refresh")
 			return

@@ -1,6 +1,7 @@
 package authorize
 
 import (
+	"aws-example/encryption"
 	errors "aws-example/error"
 	"aws-example/persistance"
 	testutils "aws-example/test"
@@ -19,14 +20,13 @@ var authHandler = authorizationHandler{
 
 func TestAuthorizeNoValidTokenFlow(test *testing.T) {
 	resp, err := authHandler.authorize()
-
 	require.Nil(test, err, "User was not redirected on authorization flow")
 	require.NotEqual(test, "", resp.RedirectUrl, "Authorization url not returned")
 }
 
 func TestAuthorizeValidTokenFlow(test *testing.T) {
 	authHandler.TokenRepository.Save(persistance.Token{
-		AccessToken: "access_token",
+		AccessToken: encryption.EncryptedString{"access_token"},
 		ExpiresAt:   authHandler.TimeProvider.GetCurrentSeconds() + 1000,
 	})
 	_, err := authHandler.authorize()

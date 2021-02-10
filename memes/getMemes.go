@@ -43,13 +43,13 @@ func (h memeSearchHandler) getMemes(request request) (*response, error) {
 	db := h.TokenRepository
 	token := persistance.Token{}
 	db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-	if token.AccessToken == "" {
+	if token.AccessToken.StringValue == "" {
 		return nil, errors.UnauthorizedError{}
 	}
 	after := ""
 	posts := make([]reddit.PostResponseData, 0)
 	for {
-		response, err := h.RedditClient.FindMemes(request.Query, request.From, after, token.AccessToken)
+		response, err := h.RedditClient.FindMemes(request.Query, request.From, after, token.AccessToken.StringValue)
 		if err != nil {
 			return nil, errors.InternalError{
 				Message: err.Error(),

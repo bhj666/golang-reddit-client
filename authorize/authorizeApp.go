@@ -32,7 +32,7 @@ func (h authorizationHandler) authorize() (*response, error) {
 	tokensDb := h.TokenRepository
 	token := persistance.Token{}
 	tokensDb.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-	if token.AccessToken != "" {
+	if token.AccessToken.StringValue != "" {
 		return nil, errors.GenericResponseError{
 			Message:      "Active token already exists",
 			ResponseCode: 409,
