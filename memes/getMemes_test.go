@@ -6,7 +6,6 @@ import (
 	"aws-example/persistance"
 	"aws-example/reddit"
 	testutils "aws-example/test"
-	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -86,12 +85,9 @@ func getMemeHandlerWithValidTokenAndData() *memeSearchHandler {
 			},
 		},
 	}
-	body1String, _ := json.Marshal(body1)
 	redditMock := &testutils.RedditClientMock{FindResults: make(map[string]testutils.FindResult)}
 	redditMock.FindResults[""] = testutils.FindResult{
-		FindStatus: 200,
-		FindError:  nil,
-		FindBody:   string(body1String),
+		FindBody: body1,
 	}
 	body2 := reddit.SearchResponse{
 		Data: reddit.SearchResponseData{
@@ -118,11 +114,8 @@ func getMemeHandlerWithValidTokenAndData() *memeSearchHandler {
 			},
 		},
 	}
-	body2String, _ := json.Marshal(body2)
 	redditMock.FindResults["after1"] = testutils.FindResult{
-		FindStatus: 200,
-		FindError:  nil,
-		FindBody:   string(body2String),
+		FindBody: body2,
 	}
 	handler.RedditClient = redditMock
 	return handler

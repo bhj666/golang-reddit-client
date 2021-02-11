@@ -6,6 +6,7 @@ import (
 	"aws-example/reddit"
 	"aws-example/timeprovider"
 	"github.com/google/uuid"
+	"net/http"
 )
 
 type response struct {
@@ -23,7 +24,7 @@ func newAuthorizationHandler() authorizationHandler {
 	return authorizationHandler{
 		persistance.NewSecretsRepository(),
 		persistance.NewTokenRepository(),
-		reddit.NewClient(),
+		reddit.NewClient(*http.DefaultClient),
 		timeprovider.ProviderImpl{},
 	}
 }
@@ -31,8 +32,8 @@ func newAuthorizationHandler() authorizationHandler {
 func (h authorizationHandler) authorize() (*response, error) {
 	tokensDb := h.TokenRepository
 	token := persistance.Token{}
-	tokensDb.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-	if token.AccessToken.StringValue != "" {
+	err := tokensDb.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
+	if err == nil && token.AccessToken.StringValue != "" {
 		return nil, errors.GenericResponseError{
 			Message:      "Active token already exists",
 			ResponseCode: 409,
@@ -40,6 +41,12 @@ func (h authorizationHandler) authorize() (*response, error) {
 	}
 	db := h.SecretsRepository
 	secret := uuid.New().String()
-	db.Save(persistance.Secret{Secret: secret})
+	err = db.Save(persistance.Secret{Secret: secret})
+	if err != nil {
+		return nil, errors.GenericResponseError{
+			Message:      err.Error(),
+			ResponseCode: 500,
+		}
+	}
 	return &response{RedirectUrl: h.RedditClient.GetRedirectUrl(secret)}, nil
 }

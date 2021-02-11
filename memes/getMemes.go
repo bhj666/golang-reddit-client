@@ -6,10 +6,7 @@ import (
 	"aws-example/reddit"
 	"aws-example/timeprovider"
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/go-kit/kit/endpoint"
-	"io/ioutil"
 	"net/http"
 	"sort"
 )
@@ -23,7 +20,7 @@ type memeSearchHandler struct {
 func newMemeSearchHandler() memeSearchHandler {
 	return memeSearchHandler{
 		persistance.NewTokenRepository(),
-		reddit.NewClient(),
+		reddit.NewClient(*http.DefaultClient),
 		timeprovider.ProviderImpl{},
 	}
 }
@@ -42,35 +39,24 @@ type response struct {
 func (h memeSearchHandler) getMemes(request request) (*response, error) {
 	db := h.TokenRepository
 	token := persistance.Token{}
-	db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-	if token.AccessToken.StringValue == "" {
+	err := db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
+	if err != nil || token.AccessToken.StringValue == "" {
 		return nil, errors.UnauthorizedError{}
 	}
 	after := ""
 	posts := make([]reddit.PostResponseData, 0)
 	for {
-		response, err := h.RedditClient.FindMemes(request.Query, request.From, after, token.AccessToken.StringValue)
+		searchResponse, err := h.RedditClient.FindMemes(request.Query, request.From, after, token.AccessToken.StringValue)
 		if err != nil {
 			return nil, errors.InternalError{
 				Message: err.Error(),
 			}
 		}
-		if response.StatusCode != http.StatusOK {
-			return nil, errors.InternalError{
-				Message: fmt.Sprintf("During fetching memes  request ended with %v code", response.StatusCode),
-			}
-		}
-		resp, err := parseResponse(response)
-		if err != nil {
-			return nil, errors.InternalError{
-				Message: fmt.Sprintf("Parsing response thrown error %v", err),
-			}
-		}
-		for _, p := range resp.Data.Posts {
+		for _, p := range searchResponse.Data.Posts {
 			posts = append(posts, p.Data)
 		}
-		if resp.Data.After != "null" && resp.Data.After != "" {
-			after = resp.Data.After
+		if searchResponse.Data.After != "null" && searchResponse.Data.After != "" {
+			after = searchResponse.Data.After
 		} else {
 			break
 		}
@@ -92,19 +78,6 @@ func getPaginated(response []reddit.PostResponseData, page, pageSize int64) []re
 		return response[min:]
 	}
 	return response[min:max]
-}
-
-func parseResponse(response *http.Response) (*reddit.SearchResponse, error) {
-	result := reddit.SearchResponse{}
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }
 
 func makeEndpoint() endpoint.Endpoint {

@@ -4,9 +4,7 @@ import (
 	"aws-example/persistance"
 	"aws-example/reddit"
 	"aws-example/timeprovider"
-	"encoding/json"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -23,7 +21,7 @@ type refreshHandlerImpl struct {
 func newRefreshHandler() refreshHandler {
 	return refreshHandlerImpl{
 		persistance.NewTokenRepository(),
-		reddit.NewClient(),
+		reddit.NewClient(*http.DefaultClient),
 		timeprovider.ProviderImpl{},
 	}
 }
@@ -33,26 +31,24 @@ func (h refreshHandlerImpl) refreshToken() func() {
 		log.Printf("Scheduled function called")
 		db := h.TokenRepository
 		token := persistance.Token{}
-		db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
-		if token.AccessToken.StringValue == "" {
+		err := db.FindActive(&token, h.TimeProvider.GetCurrentSeconds())
+		if err != nil || token.AccessToken.StringValue == "" {
 			return
 		}
-		resp, er := h.RedditClient.RefreshToken(token.RefreshToken.StringValue)
-		if er != nil || resp.StatusCode != http.StatusOK {
-			log.Print("No active tokens to refresh")
-			return
-		}
-		var newToken persistance.Token
-		response, er := ioutil.ReadAll(resp.Body)
-		er = json.Unmarshal(response, &newToken)
+		newToken, er := h.RedditClient.RefreshToken(token.RefreshToken.StringValue)
 		if er != nil {
-			log.Errorf("Error when parsing token refresh response %v", er)
 			return
 		}
 		newToken.ExpiresAt = h.TimeProvider.GetCurrentSeconds() + newToken.ExpiresIn
 		newToken.RefreshToken = token.RefreshToken
-		db.Delete(token)
-		db.Save(newToken)
+		err = db.Delete(token)
+		if err != nil {
+			log.Error(err)
+		}
+		err = db.Save(*newToken)
+		if err != nil {
+			log.Error(err)
+		}
 		log.Print("Successfully refreshed token")
 	}
 }

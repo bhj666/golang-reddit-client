@@ -7,9 +7,9 @@ import (
 )
 
 type SecretsRepository interface {
-	Save(Secret)
-	Delete(Secret)
-	Find(string, *Secret)
+	Save(Secret) error
+	Delete(Secret) error
+	Find(string, *Secret) error
 }
 
 type Secret struct {
@@ -29,16 +29,16 @@ func NewSecretsRepository() SecretsRepository {
 	return SecretsRepositoryImpl{openConnection()}
 }
 
-func (repo SecretsRepositoryImpl) Save(message Secret) {
-	repo.db.Create(message)
+func (repo SecretsRepositoryImpl) Save(message Secret) error {
+	return repo.db.Create(message).Error
 }
 
-func (repo SecretsRepositoryImpl) Delete(message Secret) {
-	repo.db.Delete(message)
+func (repo SecretsRepositoryImpl) Delete(message Secret) error {
+	return repo.db.Delete(message).Error
 }
 
-func (repo SecretsRepositoryImpl) Find(secret string, response *Secret) {
-	repo.db.Where("secret = ?", secret).Find(response)
+func (repo SecretsRepositoryImpl) Find(secret string, response *Secret) error {
+	return repo.db.Where("secret = ?", secret).Find(response).Error
 }
 
 type SecretsRepositoryImpl struct {

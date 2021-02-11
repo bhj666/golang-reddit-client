@@ -7,9 +7,9 @@ import (
 )
 
 type TokenRepository interface {
-	Save(Token)
-	Delete(Token)
-	FindActive(*Token, int64)
+	Save(Token) error
+	Delete(Token) error
+	FindActive(*Token, int64) error
 }
 
 type Token struct {
@@ -29,16 +29,16 @@ func NewTokenRepository() TokenRepository {
 	return TokenRepositoryImpl{openConnection()}
 }
 
-func (repo TokenRepositoryImpl) Save(message Token) {
-	repo.db.Create(message)
+func (repo TokenRepositoryImpl) Save(message Token) error {
+	return repo.db.Create(message).Error
 }
 
-func (repo TokenRepositoryImpl) Delete(message Token) {
-	repo.db.Delete(message)
+func (repo TokenRepositoryImpl) Delete(message Token) error {
+	return repo.db.Delete(message).Error
 }
 
-func (repo TokenRepositoryImpl) FindActive(response *Token, time int64) {
-	repo.db.Where("expires_at > ?", time).Find(response)
+func (repo TokenRepositoryImpl) FindActive(response *Token, time int64) error {
+	return repo.db.Where("expires_at > ?", time).Find(response).Error
 }
 
 type TokenRepositoryImpl struct {

@@ -4,9 +4,6 @@ import (
 	errors "aws-example/error"
 	"aws-example/persistance"
 	"aws-example/reddit"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -21,7 +18,7 @@ func newTokenExchangeHandler() tokenExchangeHandler {
 	return tokenExchangeHandler{
 		persistance.NewSecretsRepository(),
 		persistance.NewTokenRepository(),
-		reddit.NewClient(),
+		reddit.NewClient(*http.DefaultClient),
 	}
 }
 
@@ -40,33 +37,33 @@ func (h tokenExchangeHandler) exchangeToken(r request) (*response, error) {
 		return nil, errors.InternalError{Message: r.Error}
 	}
 	secret := &persistance.Secret{}
-	db.Find(r.State, secret)
-	if secret.Secret == "" {
+	err := db.Find(r.State, secret)
+	if err != nil || secret.Secret == "" {
 		return nil, errors.GenericResponseError{
 			Message:      "Such request not found",
 			ResponseCode: http.StatusNotFound,
 		}
 	}
-	db.Delete(*secret)
-	resp, er := h.RedditClient.ExchangeForToken(r.Code)
-	if er != nil {
-		return nil, errors.InternalError{Message: er.Error()}
+	err = db.Delete(*secret)
+	if err != nil {
+		return nil, errors.GenericResponseError{
+			Message:      err.Error(),
+			ResponseCode: 500,
+		}
 	}
-	response, er := ioutil.ReadAll(resp.Body)
-	if er != nil {
-		return nil, errors.InternalError{Message: er.Error()}
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.InternalError{Message: fmt.Sprintf("Response code: %v", resp.StatusCode)}
-	}
-	var token persistance.Token
-	er = json.Unmarshal(response, &token)
+	token, er := h.RedditClient.ExchangeForToken(r.Code)
 	if er != nil {
 		return nil, errors.InternalError{Message: er.Error()}
 	}
 	now := time.Now()
 	token.ExpiresAt = now.Unix() + token.ExpiresIn
 	tokenDb := h.TokenRepository
-	tokenDb.Save(token)
+	err = tokenDb.Save(*token)
+	if err != nil {
+		return nil, errors.GenericResponseError{
+			Message:      err.Error(),
+			ResponseCode: 500,
+		}
+	}
 	return nil, nil
 }

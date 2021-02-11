@@ -1,30 +1,30 @@
 package main
 
 import (
+	"aws-example/encryption"
 	"aws-example/persistance"
 	testutils "aws-example/test"
-	"encoding/json"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 var refreshedToken = persistance.Token{
-	AccessToken: "RefreshedAccessToken",
+	AccessToken: encryption.EncryptedString{"RefreshedAccessToken"},
 	ExpiresIn:   3600,
 	TokenType:   "Bearer",
 }
 
 var currentToken = persistance.Token{
-	AccessToken:  "CurrentToken",
-	RefreshToken: "refreshToken",
+	AccessToken:  encryption.EncryptedString{"CurrentToken"},
+	RefreshToken: encryption.EncryptedString{"refreshToken"},
 	ExpiresIn:    3600,
 	ExpiresAt:    2,
 	TokenType:    "Bearer",
 }
 
 var invalidToken = persistance.Token{
-	AccessToken:  "CurrentToken",
-	RefreshToken: "refreshToken",
+	AccessToken:  encryption.EncryptedString{"CurrentToken"},
+	RefreshToken: encryption.EncryptedString{"refreshToken"},
 	ExpiresIn:    3600,
 	ExpiresAt:    0,
 	TokenType:    "Bearer",
@@ -32,11 +32,10 @@ var invalidToken = persistance.Token{
 
 func getHandler(currentToken, refreshedToken persistance.Token) refreshHandlerImpl {
 	tokenMock := testutils.GetTokenRepositoryMock()
-	refreshResponse, _ := json.Marshal(refreshedToken)
 	tokenMock.Save(currentToken)
 	return refreshHandlerImpl{
 		TokenRepository: tokenMock,
-		RedditClient:    &testutils.RedditClientMock{RefreshError: nil, RefreshStatus: 200, RefreshBody: string(refreshResponse)},
+		RedditClient:    &testutils.RedditClientMock{RefreshError: nil, RefreshBody: &refreshedToken},
 		TimeProvider:    testutils.TimeProviderMock{Time: 1},
 	}
 }
@@ -48,8 +47,8 @@ func TestHappyPathFlow(test *testing.T) {
 
 	newToken := &persistance.Token{}
 	handler.TokenRepository.FindActive(newToken, 3600)
-	require.Equal(test, "RefreshedAccessToken", newToken.AccessToken)
-	require.Equal(test, "refreshToken", newToken.RefreshToken)
+	require.Equal(test, "RefreshedAccessToken", newToken.AccessToken.StringValue)
+	require.Equal(test, "refreshToken", newToken.RefreshToken.StringValue)
 }
 
 func TestNoTokenToRefreshFlow(test *testing.T) {
@@ -59,5 +58,5 @@ func TestNoTokenToRefreshFlow(test *testing.T) {
 
 	newToken := &persistance.Token{}
 	handler.TokenRepository.FindActive(newToken, 3600)
-	require.Equal(test, "", newToken.AccessToken)
+	require.Equal(test, "", newToken.AccessToken.StringValue)
 }

@@ -1,10 +1,10 @@
 package token
 
 import (
+	"aws-example/encryption"
 	errors "aws-example/error"
 	"aws-example/persistance"
 	testutils "aws-example/test"
-	"encoding/json"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -24,13 +24,13 @@ var SECRET = "secret"
 func TestHappyFlow(test *testing.T) {
 	handler := createHandler()
 	redditClientMock.ExchangeStatus = http.StatusOK
-	body, _ := json.Marshal(persistance.Token{
+	token := persistance.Token{
 		TokenType:    "Bearer",
-		AccessToken:  "AccessToken",
+		AccessToken:  encryption.EncryptedString{"AccessToken"},
 		ExpiresIn:    3600,
-		RefreshToken: "refreshToken",
-	})
-	redditClientMock.ExchangeBody = string(body)
+		RefreshToken: encryption.EncryptedString{"refreshToken"},
+	}
+	redditClientMock.ExchangeBody = &token
 	handler.SecretsRepository.Save(persistance.Secret{Secret: SECRET})
 
 	_, err := handler.exchangeToken(request{
@@ -42,8 +42,7 @@ func TestHappyFlow(test *testing.T) {
 
 func TestBadRequest(test *testing.T) {
 	handler := createHandler()
-	redditClientMock.ExchangeStatus = http.StatusBadRequest
-	redditClientMock.ExchangeBody = "{}"
+	redditClientMock.ExchangeError = errors.GenericResponseError{ResponseCode: 400, Message: "Invalid"}
 	handler.SecretsRepository.Save(persistance.Secret{Secret: SECRET})
 
 	_, err := handler.exchangeToken(request{
