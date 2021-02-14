@@ -1,11 +1,13 @@
-package memes
+package produce
 
 import (
 	errors "aws-example/error"
 	"aws-example/persistance"
 	"aws-example/reddit"
+	"aws-example/slack"
 	"aws-example/timeprovider"
 	"context"
+	"fmt"
 	"github.com/go-kit/kit/endpoint"
 	"net/http"
 	"sort"
@@ -29,12 +31,10 @@ type request struct {
 	Query     string
 	Subreddit string
 	From      string
-	Page      int64
 	PageSize  int64
 }
 
 type response struct {
-	Data []reddit.PostResponseData
 }
 
 func (h memeSearchHandler) getMemes(request request) (*response, error) {
@@ -65,20 +65,22 @@ func (h memeSearchHandler) getMemes(request request) (*response, error) {
 	sort.SliceStable(posts, func(i, j int) bool {
 		return posts[i].Score > posts[j].Score
 	})
-	return &response{Data: getPaginated(posts, request.Page, request.PageSize)}, nil
+	memes := getPaginated(posts, request.PageSize)
+	slackClient := slack.NewClient(*http.DefaultClient)
+	slackClient.SendMessage(fmt.Sprintf("Memes from %s subreddit and from last %s for query %s", request.Subreddit, request.From, request.Query))
+	for _, m := range memes {
+		slackClient.SendMessage(m.Url)
+	}
+	return nil, nil
 }
 
-func getPaginated(response []reddit.PostResponseData, page, pageSize int64) []reddit.PostResponseData {
-	min := int(page * pageSize)
+func getPaginated(response []reddit.PostResponseData, pageSize int64) []reddit.PostResponseData {
 	size := len(response)
-	if min > size {
-		return make([]reddit.PostResponseData, 0)
-	}
-	max := min + int(pageSize)
+	max := int(pageSize)
 	if max > size {
-		return response[min:]
+		return response
 	}
-	return response[min:max]
+	return response[0:max]
 }
 
 func makeEndpoint() endpoint.Endpoint {

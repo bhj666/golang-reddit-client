@@ -17,7 +17,7 @@ type Client interface {
 	GetRedirectUrl(secret string) string
 	ExchangeForToken(code string) (*persistance.Token, error)
 	RefreshToken(refreshToken string) (*persistance.Token, error)
-	FindMemes(query, from, after, token string) (*SearchResponse, error)
+	FindMemes(subreddit, query, from, after, token string) (*SearchResponse, error)
 }
 
 type ClientImpl struct {
@@ -100,8 +100,8 @@ func (c ClientImpl) RefreshToken(refreshToken string) (*persistance.Token, error
 	return &newToken, nil
 }
 
-func (c ClientImpl) FindMemes(query, from, after, token string) (*SearchResponse, error) {
-	req, err := http.NewRequest("GET", config.REDDIT_SEARCH_URL, nil)
+func (c ClientImpl) FindMemes(subreddit, query, from, after, token string) (*SearchResponse, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf(config.REDDIT_SEARCH_URL_TEMPLATE, subreddit), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c ClientImpl) FindMemes(query, from, after, token string) (*SearchResponse
 	q := req.URL.Query()
 	q.Add("q", query)
 	q.Add("restrict_sr", "1")
-	q.Add("from", from)
+	q.Add("t", from)
 	q.Add("after", after)
 	req.URL.RawQuery = q.Encode()
 	req.Header.Add("Authorization", "Bearer "+token)

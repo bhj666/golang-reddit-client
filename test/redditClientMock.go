@@ -31,7 +31,7 @@ func (c *RedditClientMock) RefreshToken(string) (*persistance.Token, error) {
 	return c.RefreshBody, c.RefreshError
 }
 
-func (c *RedditClientMock) FindMemes(query string, from string, after string, token string) (*reddit.SearchResponse, error) {
+func (c *RedditClientMock) FindMemes(subreddit, query, from, after, token string) (*reddit.SearchResponse, error) {
 	response, ok := c.FindResults[after]
 	if !ok {
 		return nil, errors.New("Not found")
